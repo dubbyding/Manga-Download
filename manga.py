@@ -19,14 +19,14 @@ class mangaDownload():
         except Exception:
             return "notLoaded", 0
 
-    def search_anime(self, manga_name=""):
+    def search_anime(self, manga_name="", force_search=False):
         if manga_name == "":
             manga_name = self.name_of_manga
         elif not manga_name == self.name_of_manga:
             self.name_of_manga = manga_name
             print("Manga to be searched changed to:- {}".format(manga_name))
         checkSearchedManga = databaseControl()
-        if not checkSearchedManga.check_id("manga", manga_name, one=False):
+        if not checkSearchedManga.getOneDetail("manga", "id", "name", manga_name, one=False) or force_search:
             searching_manga = self.driver.find_element_by_id("search_story")
             del checkSearchedManga
             searching_manga.clear()
@@ -83,3 +83,4 @@ if __name__ =="__main__":
         manga.go_to_saved_link()
     else:
         print("Already in database! Do check")
+    

@@ -1,0 +1,8 @@
+first.py
+second.py
+geckodriver.log
+manga.db
+data.json
+env
+__pycache__
+tableCreate.py

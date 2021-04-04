@@ -17,7 +17,15 @@ class databaseControl():
                 (id integer not null primary key autoincrement,
                 name varchar(100),
                 link varchar(200),
-                manga_id integer references anime(id) on update cascade
+                manga_id integer references anime(id) on delete cascade
+                )
+            ''')
+            self.cur.execute('''
+                CREATE TABLE image
+                (
+                    id integer not null primary key autoincrement,
+                    name varchar(100),
+                    chapter_id integer references chapter(id) on delete cascade
                 )
             ''')
             self.con.commit()
@@ -28,8 +36,8 @@ class databaseControl():
         
 
     def insertIntoAnime(self, name):
-        id = self.check_id("manga", name)
-        print(id)
+        id = self.getOneDetail("manga", "id", "name", name)
+        print("{} id".format(id))
         if not id:
             self.cur.execute("INSERT INTO manga (name) values (?)" , [name])
             print("{} added to the database".format(name))
@@ -37,8 +45,8 @@ class databaseControl():
             print("{} already exists in the database".format(name))
     
     def insertIntoManga(self, name, link, manga_name):
-        id = self.check_id("manga", manga_name)
-        if not self.check_id("chapter", name):
+        id = self.getOneDetail("manga", "id", "name",manga_name)
+        if not self.getOneDetail("chapter",  "id", "name", name):
             self.cur.execute("INSERT INTO chapter (name, link, manga_id) values (?,?,?)",[name, link, id])
             print("{} added to the database".format(name))
         else:
@@ -52,21 +60,24 @@ class databaseControl():
             return 1
         return value+1
 
-    def check_id(self, table, name, one=True):
-        try:
-            sql = "SELECT id FROM {} WHERE name LIKE ?".format(table)
-            self.cur.execute(sql, ('%'+name+'%',))
-            if one:
-                try:
-                    return self.cur.fetchone()[0]
-                except TypeError:
-                    return 0
-            else:
-                return self.cur.fetchall()
-    
-        except Exception as e:
-            print(e)
-            return 0
+    def getOneDetail(self, table, row, comparitor, name, one=True):
+        """
+            Get's one row details from table.
+            table-> name of the table,
+            row -> one row that is needed to be extracted.
+            comparitor -> compare to select data
+            name -> required data condition
+        """
+        sql = "SELECT {} FROM {} WHERE {} LIKE ?".format(row, table, comparitor)
+        self.cur.execute(sql, ['%'+name+'%'])
+        if one:
+            try:
+                return self.cur.fetchone()[0]
+            except TypeError:
+                return 0
+        else:
+            return self.cur.fetchall()
+
     def __del__(self):
         self.con.commit()
         self.con.close()
