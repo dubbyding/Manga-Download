@@ -35,8 +35,6 @@ class mangaDownload():
         else:
             del checkSearchedManga
             return "Already in the database", 0
-        
-
 
     def all_searched_result(self):
         # self.getAllClass = driver.find_elements_by_xpath('//*[contains(@class,"daily-update")]')
@@ -52,35 +50,35 @@ class mangaDownload():
     def go_to_saved_link(self):
         for links in self.classList:
             self.driver.get(links)
-            anime_name = self.driver.find_element_by_css_selector("div.story-info-right h1").text
-            insert_anime = databaseControl()
-            insert_anime.insertIntoAnime(anime_name)
-            del insert_anime
-            getAllClass = self.driver.find_elements_by_css_selector("li.a-h a")
-            self.manga_name = []
-            self.manga_link = []
-            for classes in getAllClass:
-                insertManga = databaseControl()
-                title = classes.get_attribute("title")
-                link = classes.get_attribute("href")
-                insertManga.insertIntoManga(title, link, anime_name)
-                del insertManga
-                self.manga_link.append(link)
-                self.manga_name.append(title)
+            try:
+                anime_name = self.driver.find_element_by_css_selector("div.story-info-right h1").text
+            except Exception:
+                anime_name = self.driver.find_element_by_css_selector("ul.manga-info-text li h1").text
+                input()
+            print("Do you want to download {} anime?(y/n)".format(anime_name))
+            check = input()
+            if check.lower() == "y":
+                insert_anime = databaseControl()
+                insert_anime.insertIntoAnime(anime_name, links)
+                del insert_anime
+                getAllClass = self.driver.find_elements_by_css_selector("li.a-h a")
+                self.manga_name = []
+                self.manga_link = []
+                for classes in getAllClass:
+                    insertManga = databaseControl()
+                    title = classes.get_attribute("title")
+                    link = classes.get_attribute("href")
+                    insertManga.insertIntoManga(title, link, anime_name)
+                    del insertManga
+                    self.manga_link.append(link)
+                    self.manga_name.append(title)
+            else:
+                continue
     
     
 
     def __del__(self):
         self.driver.close()
 
-if __name__ =="__main__":
 
-    manga = mangaDownload("Attack On Titan")
-    manga.go_to_mangakakalot()
-    status = manga.search_anime()
-    if(status[1]):
-        manga.all_searched_result()
-        manga.go_to_saved_link()
-    else:
-        print("Already in database! Do check")
     
