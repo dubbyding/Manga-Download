@@ -1,9 +1,14 @@
 import sqlite3
 import os
+import platform
 
 class databaseControl():
     def __init__(self):
-        self.path = "/home/rjmhrj/Documents/Manga"
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        if platform.system()=="Windows":
+            self.path = os.path.join(dir_path, "Manga")
+        else:
+            self.path = "/home/rjmhrj/Documents/Manga"
         dir_path = os.path.dirname(os.path.realpath(__file__))
         if not (os.path.isfile(os.path.join(dir_path,"manga.db"))):
 
@@ -26,14 +31,6 @@ class databaseControl():
                     manga_id integer references anime(id) on delete cascade
                 )
             ''')
-            self.cur.execute('''
-                CREATE TABLE image
-                (
-                    id integer not null primary key autoincrement,
-                    name varchar(100),
-                    chapter_id integer references chapter(id) on delete cascade
-                )
-            ''')
             self.con.commit()
         else:
 
@@ -51,7 +48,7 @@ class databaseControl():
         id = self.getOneDetail("manga", "id", "name", name)
         if not id:
             self.cur.execute("INSERT INTO manga (name, link) values (?,?)" , [name, links])
-            folder = os.path.join(self.path,name)
+            folder = os.path.join(self.path,name.translate({ord(c):" " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"})).replace(" ","-")
             if not os.path.isdir(folder):
                 os.mkdir(folder)
             print("{} added to the database".format(name))
@@ -68,10 +65,12 @@ class databaseControl():
         """
         id = self.getOneDetail("manga", "id", "name",manga_name)
         if not self.getOneDetail("chapter",  "id", "name", name):
+            if "Chapter" in name:
+                name = name[name.find("Chapter"):]
             self.cur.execute("INSERT INTO chapter (name, link, manga_id) values (?,?,?)",[name, link, id])
-            folder = os.path.join(os.path.join(self.path,manga_name), name)
-            if not os.path.isdir(folder):
-                os.mkdir(folder)
+            # folder = os.path.join(os.path.join(self.path,manga_name), name.translate({ord(c):" " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"})).replace(" ","-")
+            # if not os.path.isdir(folder):
+            #     os.mkdir(folder)
             print("{} added to the database".format(name))
         else:
             print("{} already exists in the database".format(name))
@@ -105,6 +104,20 @@ class databaseControl():
                 return 0
         else:
             return self.cur.fetchall()
+    
+    def getDetailJoin(self, table1, table2, row_to_display, row1, row2, one=True):
+        
+        select = ""
+        for index, row in enumerate(row_to_display):
+            select = select + table1 + "." + row
+            if not index == len(row_to_display) - 1:
+                select = select + ", "
+        sql = "SELECT {} FROM {} INNER JOIN {} ON {}.{}={}.{}".format(select, table1, table2, table1, row1, table2, row2)
+        self.cur.execute(sql)
+        if one:
+            return self.cur.fetchall()
+        else:
+            return self.cur.fetchone()[0]
 
     def __del__(self):
         self.con.commit()

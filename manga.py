@@ -1,15 +1,21 @@
 from selenium import webdriver
+from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import os
 from databaseControl import databaseControl
+from platform import system
 
 
 class mangaDownload():
     def __init__(self, name_of_manga):
         self.name_of_manga = name_of_manga
-        self.driver = webdriver.Firefox()
+        geckodriver = "geckodriver/geckodriver"
+        if system() =="Windows":
+            geckodriver = geckodriver + ".exe"
+        self.driver = webdriver.Firefox(executable_path=os.path.join(os.path.dirname(os.path.realpath(__file__)), geckodriver))
         self.driver.minimize_window()
 
     def go_to_mangakakalot(self):
@@ -55,9 +61,9 @@ class mangaDownload():
             except Exception:
                 anime_name = self.driver.find_element_by_css_selector("ul.manga-info-text li h1").text
                 input()
-            print("Do you want to download {} anime?(y/n)".format(anime_name))
+            print("Do you want to download {} anime?(y/n/q)(Yes/No/Quit)".format(anime_name))
             check = input()
-            if check.lower() == "y":
+            if check.lower() == "y" or check.lower() == "yes":
                 insert_anime = databaseControl()
                 insert_anime.insertIntoAnime(anime_name, links)
                 del insert_anime
@@ -66,16 +72,35 @@ class mangaDownload():
                 self.manga_link = []
                 for classes in getAllClass:
                     insertManga = databaseControl()
-                    title = classes.get_attribute("title")
+                    title = classes.get_attribute("innerHTML")
                     link = classes.get_attribute("href")
                     insertManga.insertIntoManga(title, link, anime_name)
                     del insertManga
                     self.manga_link.append(link)
                     self.manga_name.append(title)
+            elif check.lower() == "q" or check.lower()=="quit":
+                break
             else:
                 continue
     
+    def getChapterLink(self):
+        getLinks = databaseControl()
+        self.result = getLinks.getDetailJoin("chapter", "manga", ["name", "link"], "manga_id", "id")
+        self.name_manga = getLinks.getDetailJoin("manga", "chapter", ["name"], "id", "manga_id",one=False)
+        # print(self.name_manga)
+        del getLinks
+        return self.result
     
+    def go_to_chapter_link(self):
+        for chapter_name, chapter_link in self.result:
+            self.driver.get(chapter_link)
+            current_folder = os.path.dirname(os.path.abspath(__name__))
+            chap_name = chapter_name.translate({ord(c):" " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"}).replace(" ", "-")+".png"
+            mangaName = self.name_manga.translate({ord(c):" " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"}).replace(" ", "-")
+            path = os.path.join(os.path.join(os.path.join(current_folder,"Manga"), mangaName),chap_name).replace('\\',"/")
+            # print(path)
+            if self.driver.save_screenshot(path):
+                print("{} is saved.".format(chap_name))
 
     def __del__(self):
         self.driver.close()
