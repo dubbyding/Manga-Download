@@ -64,13 +64,15 @@ class databaseControl():
             manga_name => Anime name
         """
         id = self.getOneDetail("manga", "id", "name",manga_name)
+        
+        if "Chapter" in name:
+            name = name[name.find("Chapter"):]+'_'+manga_name
         if not self.getOneDetail("chapter",  "id", "name", name):
-            if "Chapter" in name:
-                name = name[name.find("Chapter"):]
             self.cur.execute("INSERT INTO chapter (name, link, manga_id) values (?,?,?)",[name, link, id])
             # folder = os.path.join(os.path.join(self.path,manga_name), name.translate({ord(c):" " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"})).replace(" ","-")
             # if not os.path.isdir(folder):
             #     os.mkdir(folder)
+            # print("INSERT INTO chapter (name, link, manga_id) values (?,?,?)".replace('?','%s') % [name, link, id])
             print("{} added to the database".format(name))
         else:
             print("{} already exists in the database".format(name))
@@ -104,21 +106,53 @@ class databaseControl():
                 return 0
         else:
             return self.cur.fetchall()
-    
-    def getDetailJoin(self, table1, table2, row_to_display, row1, row2, one=True):
-        
-        select = ""
-        for index, row in enumerate(row_to_display):
-            select = select + table1 + "." + row
-            if not index == len(row_to_display) - 1:
-                select = select + ", "
-        sql = "SELECT {} FROM {} INNER JOIN {} ON {}.{}={}.{}".format(select, table1, table2, table1, row1, table2, row2)
+    def get_more_details(self, row_to_display, table):
+        if isinstance(row_to_display, list):
+            select = ""
+            for index, row in enumerate(row_to_display):
+                select = select + row
+                if not index == len(row_to_display) - 1:
+                    select = select + ','
+        else:
+            select = row_to_display
+        sql = "SELECT {} FROM {}".format(select, table)
+        self.cur.execute(sql)
+        return self.cur.fetchall()
+
+    def getDetailJoin(self, table1, table2, row_to_display, row1, row2, name_manga, one=True):
+        if table1 == 'manga':
+            status = True
+            table1 = 'SQLINNER'
+        else:
+            status = False
+            table2 = 'SQLINNER'
+        if isinstance(row_to_display, list):
+            select = ""
+            for index, row in enumerate(row_to_display):
+                select = select + table1 + '.' + row
+                if not index == len(row_to_display) - 1:
+                    select = select + ", "
+        else:
+            select = table1 + '.' + row
+        # print(select)
+        table11 = '(SELECT * FROM manga WHERE manga.name="{}") AS SQLINNER'.format(name_manga)
+        if status:
+            sql = "SELECT DISTINCT {} FROM {} INNER JOIN {} ON {}.{}={}.{}".format(select, table11, table2, table1, row1, table2, row2)
+        else:
+            sql = "SELECT DISTINCT {} FROM {} INNER JOIN {} ON {}.{}={}.{}".format(select, table1, table11, table1, row1, table2, row2)
+
+        # print(sql)
+
         self.cur.execute(sql)
         if one:
-            return self.cur.fetchall()
-        else:
             return self.cur.fetchone()[0]
+        else:
+            return self.cur.fetchall()
 
     def __del__(self):
         self.con.commit()
         self.con.close()
+
+if __name__ == '__main__':
+    trying = databaseControl()
+    print(trying.getDetailJoin('chapter', 'manga', ['name'], 'manga_id', 'id', 'Attack On Titan'))
