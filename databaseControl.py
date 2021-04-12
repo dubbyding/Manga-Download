@@ -48,7 +48,7 @@ class databaseControl():
         id = self.getOneDetail("manga", "id", "name", name)
         if not id:
             self.cur.execute("INSERT INTO manga (name, link) values (?,?)" , [name, links])
-            folder = os.path.join(self.path,name.translate({ord(c):" " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+"})).replace(" ","-")
+            folder = os.path.join(self.path,name.translate({ord(c):" " for c in "!@#$%^&*()[]{};:,./<>?\|`~-=_+'\""})).replace(" ","-")
             if not os.path.isdir(folder):
                 os.mkdir(folder)
             print("{} added to the database".format(name))
