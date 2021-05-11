@@ -139,26 +139,38 @@ class mangaDownload():
     def go_to_chapter_link(self):
         for chapter_name, chapter_link in self.result:
             current_folder = os.path.dirname(os.path.abspath(__name__))
-            chap_name = chapter_name.translate({ord(c):" " for c in '!@#$%^&*()[]{};:,./<>?\|`~-=_+"\''}).replace(" ", "-")+".png"
+            chap_name = chapter_name.translate({ord(c):" " for c in '!@#$%^&*()[]{};:,./<>?\|`~-=_+"\''}).replace(" ", "-")
             mangaName = self.name_manga.translate({ord(c):" " for c in '!@#$%^&*()[]{};:,./<>?\|`~-=_+"\''}).replace(" ", "-")
             path = os.path.join(os.path.join(os.path.join(current_folder,"Manga"), mangaName),chap_name).replace('\\',"/")
-            if os.path.isfile(path):
-                print("{} manga's {} chapter already exists".format(mangaName, chap_name))
-                continue
+            if not os.path.isdir(path):
+                os.mkdir(path)
             self.driver.get(chapter_link)
             try:
-                image_container = self.driver.find_element_by_css_selector("div.container-chapter-reader")# print(path)
-                screenshot = image_container.screenshot_as_png
-                with open(path, 'wb') as f:
-                    f.write(screenshot)
-                print("{} is saved".format(chap_name))
+                image_container = self.driver.find_elements_by_css_selector("div.container-chapter-reader img")# print(path)
+                for index, image_items in enumerate(image_container):
+                    file_name = "Page-"+str(index+1)+".png"
+                    current_path = os.path.join(path, file_name)
+                    # print(path)
+                    # print(current_path)
+                    if os.path.isfile(current_path):
+                        print("{} manga's {} chapter's {} page already exists".format(mangaName, chap_name, index+1))
+                        continue
+                    screenshot = image_items.screenshot_as_png
+                    with open(current_path, 'wb') as f:
+                        f.write(screenshot)
+                    print("{} page number added of {}".format(index+1, chap_name))
+                print("{} pages are saved".format(index+1))
             except Exception as e:
-                path = path.split('.')[:-1:][0]+'Error.txt'
-                error_container = self.driver.find_element_by_css_selector("div.panel-not-found")
-                with open(path, 'w') as f:
-                    f.write('{} has occured'.format(error_container.find_element_by_css_selector('p').get_attribute("innerHTML")))
-                print('{} has occured'.format(error_container.find_element_by_css_selector('p').get_attribute("innerHTML")))
-            
+                input()
+                path = path+'Error.txt'
+                try:
+                    error_container = self.driver.find_element_by_css_selector("div.panel-not-found")
+                    with open(path, 'w') as f:
+                        f.write('{} has occured'.format(error_container.find_element_by_css_selector('p').get_attribute("innerHTML")))
+                    print('{} has occured'.format(error_container.find_element_by_css_selector('p').get_attribute("innerHTML")))
+                except:
+                    with open(path,"w") as f:
+                        f.write("{} has occured".format(e))
     
     def get_anime_name(self):
         anime_list = databaseControl()

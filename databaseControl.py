@@ -1,15 +1,10 @@
 import sqlite3
 import os
-import platform
 
 class databaseControl():
     def __init__(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        if platform.system()=="Windows":
-            self.path = os.path.join(dir_path, "Manga")
-        else:
-            self.path = "/home/rjmhrj/Documents/Manga"
-        dir_path = os.path.dirname(os.path.realpath(__file__))
+        self.path = os.path.join(dir_path, "Manga")
         if not (os.path.isfile(os.path.join(dir_path,"manga.db"))):
 
             self.con = sqlite3.connect("manga.db")
