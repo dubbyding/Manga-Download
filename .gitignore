@@ -3,3 +3,4 @@ manga.db
 env
 __pycache__
 .vscode
+run.sh

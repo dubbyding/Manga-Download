@@ -147,19 +147,6 @@ class mangaDownload():
             self.driver.get(chapter_link)
             try:
                 image_container = self.driver.find_elements_by_css_selector("div.container-chapter-reader img")# print(path)
-                for index, image_items in enumerate(image_container):
-                    file_name = "Page-"+str(index+1)+".png"
-                    current_path = os.path.join(path, file_name)
-                    # print(path)
-                    # print(current_path)
-                    if os.path.isfile(current_path):
-                        print("{} manga's {} chapter's {} page already exists".format(mangaName, chap_name, index+1))
-                        continue
-                    screenshot = image_items.screenshot_as_png
-                    with open(current_path, 'wb') as f:
-                        f.write(screenshot)
-                    print("{} page number added of {}".format(index+1, chap_name))
-                print("{} pages are saved".format(index+1))
             except Exception as e:
                 input()
                 path = path+'Error.txt'
@@ -171,6 +158,29 @@ class mangaDownload():
                 except:
                     with open(path,"w") as f:
                         f.write("{} has occured".format(e))
+                pass    
+            for index, image_items in enumerate(image_container):
+                file_name = "Page-"+str(index+1)+".png"
+                current_path = os.path.join(path, file_name)
+                # print(path)
+                # print(current_path)
+                if os.path.isfile(current_path):
+                    print("{} manga's {} chapter's {} page already exists".format(mangaName, chap_name, index+1))
+                    continue
+                try:
+                    screenshot = image_items.screenshot_as_png
+                    with open(current_path, 'wb') as f:
+                        f.write(screenshot)
+                    print("{} page number added of {}".format(index+1, chap_name))
+                except Exception as e:
+                    print("An error has occured downloading {} page from {} chapter. Please try downloading Manually".format(index+1, chap_name))
+                    file_name = "Page-"+str(index+1)+".txt"
+                    current_path = os.path.join(path, file_name)
+                    with open(current_path,"w") as f:
+                        f.write("An error has occured downloading {} page from {} chapter. Please try downloading Manually".format(index+1, chap_name))
+                    continue
+            print("{} pages are saved".format(index+1))
+            
     
     def get_anime_name(self):
         anime_list = databaseControl()
